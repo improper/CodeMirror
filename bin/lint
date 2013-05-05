@@ -4,8 +4,9 @@ var lint = require("../test/lint/lint");
 
 process.chdir(__dirname.slice(0, __dirname.lastIndexOf("/")));
 
-lint.checkDir("mode");
-lint.checkDir("lib");
 lint.checkDir("addon");
+lint.checkDir("keymap");
+lint.checkDir("lib");
+lint.checkDir("mode");
 
 process.exit(lint.success() ? 0 : 1);
