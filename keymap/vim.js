@@ -188,8 +188,8 @@
         motionArgs: { forward: false }},
     { keys: ['\'', 'character'], type: 'motion', motion: 'goToMark' },
     { keys: ['`', 'character'], type: 'motion', motion: 'goToMark' },
-    { keys: [']', '`',], type: 'motion', motion: 'jumpToMark', motionArgs: { forward: true } },
-    { keys: ['[', '`',], type: 'motion', motion: 'jumpToMark', motionArgs: { forward: false } },
+    { keys: [']', '`'], type: 'motion', motion: 'jumpToMark', motionArgs: { forward: true } },
+    { keys: ['[', '`'], type: 'motion', motion: 'jumpToMark', motionArgs: { forward: false } },
     { keys: [']', '\''], type: 'motion', motion: 'jumpToMark', motionArgs: { forward: true, linewise: true } },
     { keys: ['[', '\''], type: 'motion', motion: 'jumpToMark', motionArgs: { forward: false, linewise: true } },
     { keys: [']', 'character'], type: 'motion',
@@ -300,9 +300,9 @@
   ];
 
   var Vim = function() {
-    var alphabetRegex = /[A-Za-z]/;
+    // var alphabetRegex = /[A-Za-z]/;
     var numberRegex = /[\d]/;
-    var whiteSpaceRegex = /\s/;
+    // var whiteSpaceRegex = /\s/;
     var wordRegexp = [(/\w/), (/[^\w\s]/)], bigWordRegexp = [(/\S/)];
     function makeKeyRange(start, size) {
       var keys = [];
@@ -323,9 +323,11 @@
     var validRegisters = upperCaseAlphabet.concat(lowerCaseAlphabet).concat(
         numbers).concat('-\"'.split(''));
 
+    /*
     function isAlphabet(k) {
       return alphabetRegex.test(k);
     }
+    */
     function isLine(cm, line) {
       return line >= cm.firstLine() && line <= cm.lastLine();
     }
@@ -341,12 +343,14 @@
     function isUpperCase(k) {
       return (/^[A-Z]$/).test(k);
     }
+    /*
     function isAlphanumeric(k) {
       return (/^[\w]$/).test(k);
     }
     function isWhiteSpace(k) {
       return whiteSpaceRegex.test(k);
     }
+    */
     function isWhiteSpaceString(k) {
       return (/^\s*$/).test(k);
     }
@@ -783,11 +787,11 @@
           cm.scrollTo(originalScrollPos.left, originalScrollPos.top);
           handleQuery(query, true /** ignoreCase */, true /** smartCase */);
         }
-        function onPromptKeyUp(e, query) {
+        function onPromptKeyUp(_, query) {
           var parsedQuery;
           try {
             parsedQuery = updateSearchQuery(cm, query,
-                true /** ignoreCase */, true /** smartCase */)
+                true /** ignoreCase */, true /** smartCase */);
           } catch (e) {
             // Swallow bad regexes for incremental search.
           }
@@ -798,7 +802,7 @@
             cm.scrollTo(originalScrollPos.left, originalScrollPos.top);
           }
         }
-        function onPromptKeyDown(e, query, close) {
+        function onPromptKeyDown(e, _, close) {
           var keyName = CodeMirror.keyName(e);
           if (keyName == 'Esc' || keyName == 'Ctrl-C' || keyName == 'Ctrl-[') {
             updateSearchQuery(cm, originalQuery);
@@ -850,7 +854,7 @@
         function onPromptClose(input) {
           exCommandDispatcher.processCommand(cm, input);
         }
-        function onPromptKeyDown(e, input, close) {
+        function onPromptKeyDown(e, _, close) {
           var keyName = CodeMirror.keyName(e);
           if (keyName == 'Esc' || keyName == 'Ctrl-C' || keyName == 'Ctrl-[') {
             CodeMirror.e_stop(e);
@@ -1009,7 +1013,7 @@
           }
         }
       },
-      recordLastEdit: function(cm, vim, inputState) {
+      recordLastEdit: function(_, vim, inputState) {
         vim.lastEdit = inputState;
       }
     };
@@ -1039,7 +1043,7 @@
         var cur = cm.getCursor();
         return { line: cur.line + motionArgs.repeat - 1, ch: Infinity };
       },
-      findNext: function(cm, motionArgs, vim) {
+      findNext: function(cm, motionArgs, _) {
         var state = getSearchState(cm);
         var query = state.getQuery();
         if (!query) {
@@ -1051,7 +1055,7 @@
         highlightSearchMatches(cm, query);
         return findNext(cm, prev/** prev */, query, motionArgs.repeat);
       },
-      goToMark: function(cm, motionArgs, vim) {
+      goToMark: function(_, motionArgs, vim) {
         var mark = vim.marks[motionArgs.selectedCharacter];
         if (mark) {
           return mark.find();
@@ -1059,7 +1063,7 @@
         return null;
       },
       jumpToMark: function(cm, motionArgs, vim) {
-        var best = cm.getCursor(); 
+        var best = cm.getCursor();
         for (var i = 0; i < motionArgs.repeat; i++) {
           var cursor = best;
           for (var key in vim.marks) {
@@ -1068,7 +1072,7 @@
             }
             var mark = vim.marks[key].find();
             var isWrongDirection = (motionArgs.forward) ?
-              cursorIsBefore(mark, cursor) : cursorIsBefore(cursor, mark)
+              cursorIsBefore(mark, cursor) : cursorIsBefore(cursor, mark);
 
             if (isWrongDirection) {
               continue;
@@ -1078,7 +1082,7 @@
             }
 
             var equal = cursorEqual(cursor, best);
-            var between = (motionArgs.forward) ? 
+            var between = (motionArgs.forward) ?
               cusrorIsBetween(cursor, mark, best) :
               cusrorIsBetween(best, mark, cursor);
 
@@ -1189,7 +1193,6 @@
         return { line: line, ch: 0 };
       },
       moveByScroll: function(cm, motionArgs, vim) {
-        var globalState = getVimGlobalState();
         var scrollbox = cm.getScrollInfo();
         var curEnd = null;
         var repeat = motionArgs.repeat;
@@ -1241,8 +1244,8 @@
       moveToEol: function(cm, motionArgs, vim) {
         var cur = cm.getCursor();
         vim.lastHPos = Infinity;
-        var retval={ line: cur.line + motionArgs.repeat - 1, ch: Infinity }
-        var end=cm.clipPos(retval);
+        var retval = { line: cur.line + motionArgs.repeat - 1, ch: Infinity };
+        var end = cm.clipPos(retval);
         end.ch--;
         vim.lastHSPos = cm.charCoords(end,"div").left;
         return retval;
@@ -1301,7 +1304,7 @@
         motionArgs.inclusive = forward ? true : false;
         var curEnd = moveToCharacter(cm, repeat, forward, lastSearch.selectedCharacter);
         if (!curEnd) {
-          cm.moveH(increment, 'char')
+          cm.moveH(increment, 'char');
           return cm.getCursor();
         }
         curEnd.ch += increment;
@@ -1310,7 +1313,7 @@
     };
 
     var operators = {
-      change: function(cm, operatorArgs, vim, curStart, curEnd) {
+      change: function(cm, operatorArgs, _, curStart, curEnd) {
         getVimGlobalState().registerController.pushText(
             operatorArgs.registerName, 'change', cm.getRange(curStart, curEnd),
             operatorArgs.linewise);
@@ -1333,7 +1336,7 @@
         cm.setCursor(curStart);
       },
       // delete is a javascript keyword.
-      'delete': function(cm, operatorArgs, vim, curStart, curEnd) {
+      'delete': function(cm, operatorArgs, _, curStart, curEnd) {
         getVimGlobalState().registerController.pushText(
             operatorArgs.registerName, 'delete', cm.getRange(curStart, curEnd),
             operatorArgs.linewise);
@@ -1364,7 +1367,7 @@
         cm.setCursor(curStart);
         cm.setCursor(motions.moveToFirstNonWhiteSpaceCharacter(cm));
       },
-      swapcase: function(cm, operatorArgs, vim, curStart, curEnd, curOriginal) {
+      swapcase: function(cm, _, _, curStart, curEnd, curOriginal) {
         var toSwap = cm.getRange(curStart, curEnd);
         var swapped = '';
         for (var i = 0; i < toSwap.length; i++) {
@@ -1375,7 +1378,7 @@
         cm.replaceRange(swapped, curStart, curEnd);
         cm.setCursor(curOriginal);
       },
-      yank: function(cm, operatorArgs, vim, curStart, curEnd, curOriginal) {
+      yank: function(cm, operatorArgs, _, curStart, curEnd, curOriginal) {
         getVimGlobalState().registerController.pushText(
             operatorArgs.registerName, 'yank',
             cm.getRange(curStart, curEnd), operatorArgs.linewise);
@@ -1390,7 +1393,6 @@
             getPropertyValue('height');
         var height = parseInt(heightProp);
         var y = cm.charCoords({line: lineNum, ch: 0}, "local").top;
-        var halfHeight = parseInt(height) / 2;
         switch (actionArgs.position) {
           case 'center': y = y - (height / 2) + 10;
               break;
@@ -1515,7 +1517,7 @@
         }
         this.enterInsertMode(cm);
       },
-      paste: function(cm, actionArgs, vim) {
+      paste: function(cm, actionArgs, _) {
         var cur = cm.getCursor();
         var register = getVimGlobalState().registerController.getRegister(
             actionArgs.registerName);
@@ -1563,7 +1565,7 @@
       redo: function(cm, actionArgs) {
         repeatFn(cm, CodeMirror.commands.redo, actionArgs.repeat)();
       },
-      setRegister: function(cm, actionArgs, vim) {
+      setRegister: function(_, actionArgs, _) {
         vim.inputState.registerName = actionArgs.selectedCharacter;
       },
       setMark: function(cm, actionArgs, vim) {
@@ -1606,11 +1608,11 @@
           }
         }
       },
-      enterReplaceMode: function(cm, actionArgs) {
+      enterReplaceMode: function(cm, _) {
         cm.setOption('keyMap', 'vim-replace');
         cm.toggleOverwrite();
       },
-      incrementNumberToken: function(cm, actionArgs, vim) {
+      incrementNumberToken: function(cm, actionArgs, _) {
         var cur = cm.getCursor();
         var lineStr = cm.getLine(cur.line);
         var re = /-?\d+/g;
@@ -1699,6 +1701,7 @@
       return { line: line, ch: ch };
     }
     // Merge arguments in place, for overriding arguments.
+    /*
     function mergeArgs(to, from) {
       for (var prop in from) {
         if (from.hasOwnProperty(prop)) {
@@ -1706,6 +1709,7 @@
         }
       }
     }
+    */
     function copyArgs(args) {
       var ret = {};
       for (var prop in args) {
@@ -1718,6 +1722,7 @@
     function offsetCursor(cur, offsetLine, offsetCh) {
       return { line: cur.line + offsetLine, ch: cur.ch + offsetCh };
     }
+    /*
     function arrayEq(a1, a2) {
       if (a1.length != a2.length) {
         return false;
@@ -1729,6 +1734,7 @@
       }
       return true;
     }
+    */
     function matchKeysPartial(pressed, mapped) {
       for (var i = 0; i < pressed.length; i++) {
         // 'character' means any character. For mark, register commads, etc.
@@ -1738,6 +1744,7 @@
       }
       return true;
     }
+    /*
     function arrayIsSubsetFromBeginning(small, big) {
       for (var i = 0; i < small.length; i++) {
         if (small[i] != big[i]) {
@@ -1746,6 +1753,7 @@
       }
       return true;
     }
+    */
     function repeatFn(cm, fn, repeat) {
       return function() {
         for (var i = 0; i < repeat; i++) {
@@ -1817,7 +1825,7 @@
     }
 
     // Expand the selection to line ends.
-    function expandSelectionToLine(cm, curStart, curEnd) {
+    function expandSelectionToLine(_, curStart, curEnd) {
       curStart.ch = 0;
       curEnd.ch = 0;
       curEnd.line++;
@@ -1831,7 +1839,7 @@
       return firstNonWS == -1 ? text.length : firstNonWS;
     }
 
-    function expandWordUnderCursor(cm, inclusive, forward, bigWord, noSymbol) {
+    function expandWordUnderCursor(cm, inclusive, _, bigWord, noSymbol) {
       var cur = cm.getCursor();
       var line = cm.getLine(cur.line);
       var idx = cur.ch;
@@ -1924,7 +1932,7 @@
         }
       },
       // TODO: The original Vim implementation only operates on level 1 and 2.
-      // The current implementation doesn't check for code block level and 
+      // The current implementation doesn't check for code block level and
       // therefore it operates on any levels.
       method: {
         init: function(state) {
@@ -1976,7 +1984,7 @@
         reverseSymb: (forward ?  { ')': '(', '}': '{' } : { '(': ')', '{': '}' })[symb],
         forward: forward,
         depth: 0,
-        curMoveThrough: false      
+        curMoveThrough: false
       };
       var mode = symbolToMode[symb];
       if(!mode)return cur;
@@ -2089,11 +2097,10 @@
     function moveToWord(cm, repeat, forward, wordEnd, bigWord) {
       var cur = cm.getCursor();
       for (var i = 0; i < repeat; i++) {
-        var startCh = cur.ch, startLine = cur.line, word;
         var movedToNextWord = false;
         while (!movedToNextWord) {
           // Search and advance.
-          word = findWord(cm, cur, forward, bigWord);
+          var word = findWord(cm, cur, forward, bigWord);
           movedToNextWord = true;
           if (word) {
             // Move to the word we just found. If by moving to the word we end
@@ -2254,6 +2261,7 @@
       return { start: start, end: end };
     }
 
+    /*
     function regexLastIndexOf(string, pattern, startIndex) {
       for (var i = !startIndex ? string.length : startIndex;
           i >= 0; --i) {
@@ -2263,6 +2271,7 @@
       }
       return -1;
     }
+    */
 
     // Takes in a symbol and a cursor and tries to simulate text objects that
     // have identical opening and closing symbols
@@ -2382,7 +2391,7 @@
      *   then both ignoreCase and smartCase are ignored, and 'i' will be passed
      *   through to the Regex object.
      */
-    function parseQuery(cm, query, ignoreCase, smartCase) {
+    function parseQuery(_, query, ignoreCase, smartCase) {
       // Check if the query is already a regex.
       if (query instanceof RegExp) { return query; }
       // First try to extract regex + flags from the input. If no flags found,
@@ -2986,7 +2995,6 @@
         };
       }
 
-      var modifiers = ['Shift', 'Ctrl'];
       var keyMap = {
         'nofallthrough': true,
         'style': 'fat-cursor'
